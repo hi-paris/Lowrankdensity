@@ -37,7 +37,8 @@
 #
 
 # ## I - Import of Packages <a class="anchor" id="first-bullet"></a>
-
+# Hello World
+print('Hello World')
 
 # group 1
 import sys  # lets us access system-specific parameters and functions
