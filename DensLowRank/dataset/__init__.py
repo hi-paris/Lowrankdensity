@@ -1,1 +1,1 @@
-from DensLowRank.datasets.load_data import *
+from DensLowRank.dataset.load_data import *

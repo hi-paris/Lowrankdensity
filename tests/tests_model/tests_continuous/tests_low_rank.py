@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from our_module import our_algo
+from DensLowRank import our_algo
 
 @pytest.mark.parametrize("n, d, Y1, Y2, alpha, cstar, Cbar, expected_shape", [
     (1000, 10, np.ones((10, 10)), np.ones((10, 10)), 1, 1, 1, (10, 10)), # simple case
