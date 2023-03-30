@@ -1,6 +1,7 @@
-
 """
 Low-rank probability matrix estimator for discrete distributions
+
+Author : Laurène David
 """
 
 import numpy as np
@@ -9,10 +10,28 @@ from scipy.stats.contingency import crosstab
 
 
 
-class Discrete_distribution:
+class Discrete:
+
+    Cbar = 1 # class variable
 
     def __init__(self,alpha=0.1):
+
+        """ 
+        alpha: float, default = 0.1 
+        A tuning parameter, which gives the level of precision of the estimation.
+        Should be a positive value 
+
+        """
+
+        if alpha < 0:
+            raise ValueError(f"alpha should be positive")
+        
+        if type(alpha) not in (int,float):
+            raise ValueError(f"alpha should an int or float, not {type(alpha)}")
+        
         self.alpha = alpha 
+
+        
 
     def create_histograms(self,X):
 
@@ -43,57 +62,65 @@ class Discrete_distribution:
         _, Y2 = crosstab(data_2[:,0], data_2[:,1])
         Y2 = Y2/len(data_2)
 
+
         return Y1, Y2
     
 
     
-    def fit(self,X):
+    def fit(self,X=None,Y1=None,Y2=None,n=None,continuous_case=False):
+        # X, Y1, Y2, n = None for when Discrete model is used individually or used in Continuous model
 
         '''
         Compute an matrix estimation of the joint multinomial probability of categorical data with two varibales.
 
-        parameters:
+        Parameters:
         ----
 
         X: nd.array of size (nb_samples,2) 
         A numpy array with 2 categorical columns (int, float or str)
 
-        alpha: float (alpha > 0)
-        a tuning parameter, which gives the level of precision of the estimation 
-
         
         return:
         ----
         res/np.sum(res): numpy.ndarray
-        An estimation of the joint multinomial probability matrix of the 2d data
+        The estimated probability matrix of a multinomial distribution
 
         '''
 
+        # Check TypeError/ValueError of model input 
         if not isinstance(X, np.ndarray):
             raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
+        
+        if X.shape[0] == 0:
+            raise ValueError("X is an empty array")
         
         if X.shape[1] != 2:
             raise ValueError(f"Input X should have shape (nb_samples,2), not (nb_samples,{X.shape[1]})") 
 
-        # Model parameters
-        n = X.shape[0] 
 
-        # Histograms created from X
-        Y1, Y2 = self.create_histograms(X)
-        d = max(np.shape(Y1))
+
+        # Seperate case where discrete function used in continuous case
+        # (In continuous_case, n, Y1, Y2 will be defined in arguments of function) 
+        if continuous_case == False:
+            n = X.shape[0]
+            Y1, Y2 = self.create_histograms(X)
         
         # Model constants 
+        d = np.max(np.shape(Y1))
         Cbar = 1
         cstar = self.alpha/10 
-
         
+
+        # Specific case 
         if (n <= d * np.log(d)):
             return ((Y1 + Y2) / 2)
         
+
         # Compute p, q variables with the first histogram Y1
         p = np.sum(Y1, axis=1)
         q = np.sum(Y1, axis=0)
 
+        # Estimate probability matrix P with histogram Y2 and p,q
         res = np.zeros(np.shape(Y1))
         T = int(np.log(d) / np.log(2))
 
@@ -137,10 +164,40 @@ class Discrete_distribution:
     
 
 
+
+
+    # def sample(self, n_samples=1, random_state=None):
+    #     """Generate random multinomial samples from probability matrix P
+
+    #     Parameters 
+    #     ----------
+    #     n_samples : int, default=1
+    #         Number of samples to generate 
+
+    #     random_state : int, RandomState instance or None, default=None
+    #         Determines random number generation used to generate
+    #         random samples. Pass an int for reproducible results
+    #         across multiple function calls.     
+
+
+    #     Returns
+    #     -------
+    #     X : array-like of shape (n_samples, n_features)
+    #         List of samples.
+    #     """
+
+    #     P = self.fit()
+
+    #     return np.random.multinomial()
+
+    
+
+
 ## Test of function with dataset ##
 
 # Kaggle dataset: https://www.kaggle.com/datasets/jasleensondhi/hair-eye-color
 # df = pd.read_csv("HairEyeColor.csv")
 # X = df[["Hair","Eye"]].to_numpy()
+# P_hat = Discrete(alpha=0.01).fit(X)
+# print(P_hat)
 
-# P_hat = Discrete_distribution(alpha=0.01).fit(X)
