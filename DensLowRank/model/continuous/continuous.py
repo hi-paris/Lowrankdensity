@@ -122,12 +122,12 @@ class Continuous(Discrete):
                 a_1 = r_1 + i*h_1
                 a_2 = r_1 + (i+1)*h_1 
 
-            for c2,j in enumerate(E_2):
-                b_1 = r_2 + j*h_2
-                b_2 = r_2 + (j+1)*h_2
+                for c2,j in enumerate(E_2):
+                    b_1 = r_2 + j*h_2
+                    b_2 = r_2 + (j+1)*h_2
         
-                N_1[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(n/2)+1, int(3*n/4))])
-                N_2[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(3*n/4), n)])
+                    N_1[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(n/2)+1, int(3*n/4))])
+                    N_2[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(3*n/4), n)])
 
             P = super().fit(n=int(n/2), Y1=N_1, Y2=N_2, alpha=super().alpha, continuous_case=True)
 
