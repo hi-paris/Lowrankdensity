@@ -22,18 +22,12 @@ class Discrete:
         Should be a positive value 
 
         """
-
-        if alpha < 0:
-            raise ValueError(f"alpha should be positive")
-        
-        if type(alpha) not in (int,float):
-            raise ValueError(f"alpha should an int or float, not {type(alpha)}")
-        
         self.alpha = alpha 
+        self.P = None
 
         
 
-    def create_histograms(self,X):
+    def _compute_histograms(self,X):
 
         """
         Compute two histograms from dataset with two categorical/discrete variables.
@@ -55,20 +49,18 @@ class Discrete:
         # create histogram with the first half of the data
         data_1 = X[:split_index,:]
         _, Y1 = crosstab(data_1[:,0], data_1[:,1])
-        Y1 = Y1/len(data_1)
 
         # create histogram with the second half of the data
         data_2 = X[split_index:,:]
         _, Y2 = crosstab(data_2[:,0], data_2[:,1])
-        Y2 = Y2/len(data_2)
 
 
-        return Y1, Y2
+        return Y1/len(data_1), Y2/len(data_2)
     
 
-    
-    def fit(self,X=None,Y1=None,Y2=None,n=None,continuous_case=False):
-        # X, Y1, Y2, n = None for when Discrete model is used individually or used in Continuous model
+
+
+    def _compute_matrix(self,X=None,Y1=None,Y2=None,n=None):
 
         '''
         Compute an matrix estimation of the joint multinomial probability of categorical data with two varibales.
@@ -86,41 +78,19 @@ class Discrete:
         The estimated probability matrix of a multinomial distribution
 
         '''
-
-        # Check TypeError/ValueError of model input 
-        if not isinstance(X, np.ndarray):
-            raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
-        
-        if X.shape[0] == 0:
-            raise ValueError("X is an empty array")
-        
-        if X.shape[1] != 2:
-            raise ValueError(f"Input X should have shape (nb_samples,2), not (nb_samples,{X.shape[1]})") 
-
-
-
-        # Seperate case where discrete function used in continuous case
-        # (In continuous_case, n, Y1, Y2 will be defined in arguments of function) 
-        if continuous_case == False:
-            n = X.shape[0]
-            Y1, Y2 = self.create_histograms(X)
         
         # Model constants 
         d = np.max(np.shape(Y1))
-        Cbar = 1
         cstar = self.alpha/10 
-        
+        Cbar = self.Cbar
 
-        # Specific case 
+        # Case 1
         if (n <= d * np.log(d)):
-            return ((Y1 + Y2) / 2)
+            self.P = (Y1 + Y2) / 2
         
-
-        # Compute p, q variables with the first histogram Y1
+        # Case 2
         p = np.sum(Y1, axis=1)
         q = np.sum(Y1, axis=0)
-
-        # Estimate probability matrix P with histogram Y2 and p,q
         res = np.zeros(np.shape(Y1))
         T = int(np.log(d) / np.log(2))
 
@@ -150,7 +120,6 @@ class Discrete:
                             res[I[i], J[j]] = Y2[I[i], J[j]]
 
                 else:
-                    # Truncated SVD with threshold tau for singular value
                     tau = np.log(d) * np.sqrt(cstar * 2**(1 - min(t, u)) / n)
                     U, s, Vh = np.linalg.svd(M)
                     l = len(s[s >= tau])
@@ -159,36 +128,80 @@ class Discrete:
                     for i in range(len(I)):  # +2
                         for j in range(len(J)):
                             res[I[i], J[j]] = H[i, j]
+        
+        return res/np.sum(res)
 
-        return (res / np.sum(res))
+
+    
+    def fit(self,X=None,Y1=None,Y2=None,n=None,continuous_case=False):
+        # X, Y1, Y2, n = None for when Discrete model is used individually or used in Continuous model
+
+        '''
+        Fit categorical dataset to discrete probability matrix estimator
+
+        Parameters:
+        ----
+
+        X: nd.array of size (nb_samples,2) 
+        A numpy array with 2 categorical columns (int, float or str)
+
+        
+        return:
+        ----
+        res/np.sum(res): numpy.ndarray
+        The estimated probability matrix of a multinomial distribution
+
+        '''
+
+        # Check TypeError/ValueError of model input 
+        if not isinstance(X, np.ndarray):
+            raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
+        
+        if X.shape[0] == 0:
+            raise ValueError("X is an empty array")
+        
+        if X.shape[1] != 2:
+            raise ValueError(f"Input X should have shape (nb_samples,2), not (nb_samples,{X.shape[1]})") 
+        
+
+        # Check TypeError/ValueError on alpha 
+        if self.alpha < 0:
+            raise ValueError(f"alpha should be positive")
+        
+        if type(self.alpha) not in (int,float):
+            raise ValueError(f"alpha should an int or float, not {type(self.alpha)}")
+
+
+        # Seperate case where discrete function used in continuous function
+        if continuous_case == False:
+            n = X.shape[0]
+            Y1, Y2 = self._compute_histograms(X)
+            self.P = self._compute_matrix(n=n,Y1=Y1,Y2=Y2)
+        
+        else:
+            self.P = self._compute_matrix()
+        
+        return self
     
 
 
 
+    def probability_matrix(self):
+        """
+        Class method to return Probability matrix 
 
-    # def sample(self, n_samples=1, random_state=None):
-    #     """Generate random multinomial samples from probability matrix P
-
-    #     Parameters 
-    #     ----------
-    #     n_samples : int, default=1
-    #         Number of samples to generate 
-
-    #     random_state : int, RandomState instance or None, default=None
-    #         Determines random number generation used to generate
-    #         random samples. Pass an int for reproducible results
-    #         across multiple function calls.     
+        Parameters 
+        -------   
 
 
-    #     Returns
-    #     -------
-    #     X : array-like of shape (n_samples, n_features)
-    #         List of samples.
-    #     """
-
-    #     P = self.fit()
-
-    #     return np.random.multinomial()
+        Returns
+        -------
+        sample: array-like of shape (n_samples, n_features)
+            List of samples.
+        """
+        
+        P = self.P        
+        return P
 
     
 
@@ -196,8 +209,12 @@ class Discrete:
 ## Test of function with dataset ##
 
 # Kaggle dataset: https://www.kaggle.com/datasets/jasleensondhi/hair-eye-color
-# df = pd.read_csv("HairEyeColor.csv")
+# df = pd.read_csv(r"C:\Users\LaurèneDAVID\Documents\Projects\Dimension_Reduction\HairEyeColor.csv")
 # X = df[["Hair","Eye"]].to_numpy()
-# P_hat = Discrete(alpha=0.01).fit(X)
-# print(P_hat)
+
+# model = Discrete(alpha=0.01)
+# model.fit(X)
+# P = model.probability_matrix()
+
+# print(P)
 
