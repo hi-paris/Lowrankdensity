@@ -1,12 +1,12 @@
 """
-Low-rank probability density function estimatorfor continuous distributions
+Low-rank probability density function estimator for continuous distributions
 
 Author : Laurène David 
 """
 
 import numpy as np
 import math
-from discrete import Discrete #import Discrete parent class of Continuous
+from DensLowRank.model.discrete.discrete import * #import Discrete parent class of Continuous (doesn't work ??)
 from scipy.stats import beta, randint #to sample continuous data
 
 
@@ -14,13 +14,21 @@ class Continuous(Discrete):
 
     #Class variables
     L = 1
-    C = .005
     
     def __init__(self,alpha=0.1):
+        """
+        alpha : int/float, default = 0.1
+        """
         if alpha < 0:
             raise ValueError(f"alpha should be positive")
+        
+        if type(alpha) not in (int,float):
+            raise TypeError(f"alpha should be an int or float, not {type(alpha)}")
+        
         self.alpha = alpha 
+        self.funs = None
     
+
 
     def onedimensional_case(self,Z):
         # Algorithm 3 in the paper, not function available for user 
@@ -35,6 +43,7 @@ class Continuous(Discrete):
         if (R - r < n**(-1/3)*L**(-1/2)):
             return lambda x : 1/(R-r) if (x<=r and x>=R) else 0
 
+
         else:
             H = math.floor((R-r)*n**(1/3)*L**(1/2))**(-1)*(R-r)
             E = np.arange(-math.floor(r/H), math.ceil((1-r)/H-1))
@@ -46,7 +55,6 @@ class Continuous(Discrete):
                 for i,j in enumerate(E):
                     a = r + j*H
                     b = r + (j+1)*H
-                
                     N[i] = sum([1 for k in Z[int(n/2)+1:] if a <= k < b])
                 
                     if (x>=j*H) and (x<=(j+1)*H):
@@ -54,17 +62,18 @@ class Continuous(Discrete):
     
                 return (1/H)*s
         
+
             return f_1
 
     
 
     def fit(self,X):
         """
-        This function returns a probability density estimator for bivariate continuous distributions.
+        Compute a probability density function estimator for bivariate continuous distributions.
 
 
         Parameters :
-        ----
+        ------
 
         n : int 
         sample size 
@@ -77,17 +86,16 @@ class Continuous(Discrete):
 
 
         Return :
-        ---
-        f_1(x) : density function estimator for bivariate distributions 
-        with x,y as a 1-dimensional array
+        ------
+        density_estimator(x) : python function 
+        A density function estimator for bivariate distributions 
+        with input x as 2d np.array
     
     
         """
 
         n = X.shape[0]
         L = self.L
-        C = self.C
-
 
         # Condition 1
         r_1 = np.min(X[:int(n/2),0])
@@ -95,7 +103,10 @@ class Continuous(Discrete):
 
         if R_1 - r_1 < n**(1/3)*L**(-1/2):
             g = self.onedimensional_case(Z=X[int(n/2+1):,1])
-            return lambda x,y: (1/(R_1 - r_1))*g(y) if (x>=r_1) and (x<=R_1) else 0
+            self.funs = lambda x : (1/(R_1 - r_1))*g(x[1]) if (x[0]>=r_1) and (x[0]<=R_1) else 0 # input x : 2d np.array
+            
+            #return density_estimator
+        
 
 
         # Condition 2
@@ -104,7 +115,10 @@ class Continuous(Discrete):
 
         if R_2 - r_2 < n**(1/3)*L**(-1/2):
             g = self.onedimensional_case(Z=X[int(n/2+1):,0])
-            return lambda x,y: (1/(R_2-r_2))*g(x) if (y>=r_2) and (y<=R_2) else 0
+            self.funs = lambda x : (1/(R_2-r_2))*g(x[0]) if (x[1]>=r_2) and (x[1]<=R_2) else 0 # input x : 2d np.array
+            
+            #return density_estimator
+            
         
 
         # Condition 3 
@@ -122,33 +136,49 @@ class Continuous(Discrete):
                 a_1 = r_1 + i*h_1
                 a_2 = r_1 + (i+1)*h_1 
 
-            for c2,j in enumerate(E_2):
-                b_1 = r_2 + j*h_2
-                b_2 = r_2 + (j+1)*h_2
+                for c2,j in enumerate(E_2):
+                    b_1 = r_2 + j*h_2
+                    b_2 = r_2 + (j+1)*h_2
         
-                N_1[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(n/2)+1, int(3*n/4))])
-                N_2[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(3*n/4), n)])
+                    N_1[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(n/2)+1, int(3*n/4))])
+                    N_2[c1,c2] = sum([1 if (X[k,0] >= a_1) & (X[k,0] < a_2) & (X[k,1] >= b_1) & (X[k,1] < b_2) else 0 for k in range(int(3*n/4), n)])
 
-            P = super().fit(n=int(n/2), Y1=N_1, Y2=N_2, alpha=super().alpha, continuous_case=True)
+            P = super().fit(n=int(n/2), Y1=N_1, Y2=N_2, alpha=self.alpha, continuous_case=True)
 
 
-            # Density estimator
-            def f_1(x,y):
-                # Changes : Input of function 2d array, not 2 seperate arrays 
-                
-                if not isinstance(X, np.ndarray):
-                    raise TypeError(f"Input X should be a nd.array, not a {type(x)}")
-                
+            def f_1(x):
                 s = 0
                 for c1,i in enumerate(E_1):
                     for c2,j in enumerate(E_2):
-                        if (x>=r_1 + i*h_1) and (x<r_1 + (i+1)*h_1) and (y>=r_2 + j*h_2) and (y<r_2 + (j+1)*h_2):
+                        if (x[0]>=r_1 + i*h_1) and (x[0]<r_1 + (i+1)*h_1) and (x[1]>=r_2 + j*h_2) and (x[1]<r_2 + (j+1)*h_2):
                             s += P[c1,c2]*(1/(h_1*h_2))
                 return s
     
-            return f_1
+            self.funs = f_1
+            
+            return self
         
-        ## add function to compute density function with two array x,y (in support of density fund)
+
+
+    def pdf(self,x_d):
+        """
+        Compute the estimated low-rank probability density function of a joint distribution
+
+        Parameters 
+        ---------
+        x_d : np.array of shape (n_samples,2)
+
+
+        Return 
+        ---------
+        self.funs(x_d): 
+        Values of probability density function over x_d
+
+        """
+        # density estimator (python function)
+        density_estimator = self.funs
+        
+        return list(map(density_estimator,x_d))
     
 
 
@@ -171,6 +201,8 @@ class Continuous(Discrete):
 
 
 # samples = sample_continuous_data(n_samples=10000,K=8)
-# density_estimator = Continuous(alpha=0.1).fit(X=samples)
+# model = Continuous(alpha=0.1)
+# model.fit(X=samples)
+# density_funs = model.pdf(x_d=np.linspace(0,1)) # generate 
 
-# print(density_estimator(x=0.1,y=0.2))
+# print(density_funs)
