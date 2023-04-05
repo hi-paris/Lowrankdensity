@@ -99,7 +99,6 @@ class Continuous(Discrete):
         if R1 - r1 < n**(-1/3)*L**(-1/2):
             g = self._onedimensional_case(Z=X[int(n/2+1):,1])
             self.funs = lambda x,y : (1/(R1 - r1))*g(y) if (r1 <= x < R1) else 0 
-            
             return self
 
 
@@ -107,7 +106,6 @@ class Continuous(Discrete):
         if R2 - r2 < n**(-1/3)*L**(-1/2):
             g = self._onedimensional_case(Z=X[int(n/2+1):,0])
             self.funs = lambda x,y : (1/(R2 - r2))*g(x) if (r2 <= y < R2) else 0 
-            
             return self
   
 
