@@ -11,17 +11,18 @@ from scipy.stats.contingency import crosstab
 
 
 class Discrete:
+    """Low-rank Bivariate Discrete Probability Estimation
+    
+    Parameters 
+    ----------
+    alpha : float, default 0.1
+    Level of precision of matrix estimation
 
-    Cbar = 1 # class variable
+    """
+
+    Cbar = 1
 
     def __init__(self,alpha=0.1):
-
-        """ 
-        alpha: float, default = 0.1 
-        A tuning parameter, which gives the level of precision of the estimation.
-        Should be a positive value 
-
-        """
         self.alpha = alpha 
         self.P = None
 
@@ -37,30 +38,26 @@ class Discrete:
         return : 
         ----
         Y1: nd.array
-        A normalized histogram of the first half of the data.
+        A histogram of the first half of the data.
 
         Y2: nd.array
-        A normalized histogram of the second half of the data.
+        A histogram of the second half of the data.
 
         """
 
-        split_index = int(len(X)/2)
-
         # create histogram with the first half of the data
-        data_1 = X[:split_index,:]
+        data_1 = X[:int(len(X)/2),:]
         _, Y1 = crosstab(data_1[:,0], data_1[:,1])
 
         # create histogram with the second half of the data
-        data_2 = X[split_index:,:]
+        data_2 = X[int(len(X)/2):,:]
         _, Y2 = crosstab(data_2[:,0], data_2[:,1])
 
-
-        return Y1/len(data_1), Y2/len(data_2)
+        return Y1, Y2
     
 
 
-
-    def _compute_matrix(self,X=None,Y1=None,Y2=None,n=None):
+    def _compute_matrix(self,n=None,Y1=None,Y2=None):
 
         '''
         Compute an matrix estimation of the joint multinomial probability of categorical data with two varibales.
@@ -78,6 +75,9 @@ class Discrete:
         The estimated probability matrix of a multinomial distribution
 
         '''
+        # Normalize histograms
+        Y1 = Y1/np.sum(Y1)
+        Y2 = Y2/np.sum(Y2)
         
         # Model constants 
         d = np.max(np.shape(Y1))
@@ -133,7 +133,7 @@ class Discrete:
 
 
     
-    def fit(self,X=None,Y1=None,Y2=None,n=None,continuous_case=False):
+    def fit(self,X=None,Y1=None,Y2=None,n=None,discrete_case=True):
         # X, Y1, Y2, n = None for when Discrete model is used individually or used in Continuous model
 
         '''
@@ -149,34 +149,31 @@ class Discrete:
         return:
         ----
         res/np.sum(res): numpy.ndarray
-        The estimated probability matrix of a multinomial distribution
+        A probability matrix estimator of the data's multinomial distribution
 
         '''
 
-        # Check TypeError/ValueError of model input 
-        if not isinstance(X, np.ndarray):
-            raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
-        
-        if X.shape[0] == 0:
-            raise ValueError("X is an empty array")
-        
-        if X.shape[1] != 2:
-            raise ValueError(f"Input X should have shape (nb_samples,2), not (nb_samples,{X.shape[1]})") 
-        
-
-        # Check TypeError/ValueError on alpha 
-        if self.alpha < 0:
-            raise ValueError(f"alpha should be positive")
-        
-        if type(self.alpha) not in (int,float):
-            raise ValueError(f"alpha should an int or float, not {type(self.alpha)}")
-
 
         # Seperate case where discrete function used in continuous function
-        if continuous_case == False:
-            n = X.shape[0]
+
+        if discrete_case == True:
+            if not isinstance(X, np.ndarray):
+                raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
+        
+            if X.shape[0] == 0:
+                raise ValueError("X is an empty array")
+        
+            if X.shape[1] != 2:
+                raise ValueError(f"Input X should have shape (nb_samples,2), not (nb_samples,{X.shape[1]})") 
+        
+            if self.alpha < 0:
+                raise ValueError(f"alpha should be positive")
+        
+            if type(self.alpha) not in (int,float):
+                raise ValueError(f"alpha should an int or float, not {type(self.alpha)}")
+                
             Y1, Y2 = self._compute_histograms(X)
-            self.P = self._compute_matrix(n=n,Y1=Y1,Y2=Y2)
+            self.P = self._compute_matrix(n=X.shape[0],Y1=Y1,Y2=Y2)
         
         else:
             self.P = self._compute_matrix()
@@ -196,25 +193,60 @@ class Discrete:
 
         Returns
         -------
-        sample: array-like of shape (n_samples, n_features)
-            List of samples.
+        P: nd.array of shape (d1, d2)
+        
         """
         
         P = self.P        
         return P
+    
+
+    
+    def sample(self, n_samples=1, replace=True):
+        """
+        Sample discrete data with low_rank probability matrix P
+
+        Parameters 
+        -------   
+        n_samples : int, default=1
+        Number of samples to draw from distribution 
+
+        replace : bool, default=True
+        Sample from distribution with or without replacement
+
+        
+        Returns
+        -------
+        sample: nd.array of shape (n_samples,)
+        Samples drawn from discrete distribution with probability matrix P
+        
+
+        """
+        P = self.P
+        nrow, ncol = P.shape
+        p = np.reshape(P,nrow*ncol)
+        sample = np.random.choice(len(p), size=n_samples, p=p, replace=replace)
+        
+        return sample
+
+
+
+
+
 
     
 
 
-## Test of function with dataset ##
+## Test of class discrete with dataset ##
 
-# Kaggle dataset: https://www.kaggle.com/datasets/jasleensondhi/hair-eye-color
-# df = pd.read_csv(r"C:\Users\LaurèneDAVID\Documents\Projects\Dimension_Reduction\HairEyeColor.csv")
+# Source of HairEyeColor dataset: https://www.kaggle.com/datasets/jasleensondhi/hair-eye-color
+# path_data = r"C:\Users\LaurèneDAVID\Documents\Projects\Dimension_Reduction\HairEyeColor.csv"
+# df = pd.read_csv(path_data)
 # X = df[["Hair","Eye"]].to_numpy()
 
 # model = Discrete(alpha=0.01)
 # model.fit(X)
-# P = model.probability_matrix()
 
-# print(P)
+# print(f"P: {model.probability_matrix()}")
+# print(f"sample: {model.sample(n_samples=10)}")
 
