@@ -27,7 +27,7 @@ class Continuous(Discrete):
     Attributes :
     ---------
     density_function : python function 
-    A density function estimator for bivariate distributions 
+    A density function for bivariate distributions 
     with inputs x,y each a 1d array
 
     """
@@ -74,7 +74,7 @@ class Continuous(Discrete):
         Return :
         ---------
         self : object
-            Returns the instance itself.
+        Returns the instance itself.
     
         """
 
@@ -106,7 +106,6 @@ class Continuous(Discrete):
             self.density_function = lambda x,y : (1/(R2 - r2))*g(x) if (r2 <= y < R2) else 0 
             return self
   
-
         h1 = math.floor((R1-r1)*n**(1/3)*L**(1/2))**(-1)*(R1-r1)
         h2 = math.floor((R2-r2)*n**(1/3)*L**(1/2))**(-1)*(R2-r2)
         
@@ -123,9 +122,7 @@ class Continuous(Discrete):
             N1[int((x1 - r1)/h1),int((y1 - r2)/h2)] = N1[int((x1 - r1)/h1),int((y1 - r2)/h2)] + 1
             N2[int((x2 - r1)/h1),int((y2 - r2)/h2)] = N2[int((x2 - r1)/h1),int((y2 - r2)/h2)] + 1
 
-        fit_discrete = super().fit(n=int(n/2), Y1=N1, Y2=N2, discrete_case=False)
-        P = fit_discrete.probability_matrix
-        
+        P = super()._compute_matrix(n=int(n/2), Y1=N1, Y2=N2, discrete_case=False)        
         m1 = math.floor((R1-r1)*n**(1/3)*L**(1/2)) 
         m2 = math.floor((R2-r2)*n**(1/3)*L**(1/2))
 
@@ -177,7 +174,6 @@ class Continuous(Discrete):
         return mat
     
 
-np.random.seed(1)
 
 
 ### Test Continuous model with continuous test data #####
