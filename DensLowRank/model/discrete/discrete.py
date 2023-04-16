@@ -31,21 +31,22 @@ class Discrete:
         self.probability_matrix = None
 
 
-    def _compute_matrix(self,n=None,Y1=None,Y2=None):
-        # Normalize histograms
-        Y1 = Y1/np.sum(Y1)
-        Y2 = Y2/np.sum(Y2)
+    def _compute_matrix(self,X=None,n=None,Y1=None,Y2=None,discrete_case=True):
         
-        # Model constants 
+        if discrete_case == True:
+            n = X.shape[0]
+            Y1 = crosstab(X[:int(len(X)/2),0], X[:int(len(X)/2),1])[1]
+            Y2 = crosstab(X[int(len(X)/2):,0], X[int(len(X)/2):,1])[1]
+
         d = np.max(np.shape(Y1))
         cstar = self.alpha/10 
         Cbar = 1
+        Y1 = Y1/np.sum(Y1)
+        Y2 = Y2/np.sum(Y2)
 
-        # Case 1
         if (n <= d * np.log(d)):
             self.P = (Y1 + Y2) / 2
         
-        # Case 2
         p = np.sum(Y1, axis=1)
         q = np.sum(Y1, axis=0)
         res = np.zeros(np.shape(Y1))
@@ -90,9 +91,7 @@ class Discrete:
 
 
     
-    def fit(self,X=None,Y1=None,Y2=None,n=None,discrete_case=True):
-        # X, Y1, Y2, n = None for when Discrete model is used individually or used in Continuous model
-
+    def fit(self,X):
         '''
         Fit categorical dataset to discrete probability matrix estimator
 
@@ -110,31 +109,22 @@ class Discrete:
 
         '''
 
+        if not isinstance(X, np.ndarray):
+            raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
+        
+        if X.shape[0] == 0:
+            raise ValueError("X is an empty array")
+        
+        if X.shape[1] != 2:
+            raise ValueError(f"Input X should have shape (nb_samples,2), not (nb_samples,{X.shape[1]})") 
+        
+        if self.alpha < 0:
+            raise ValueError(f"alpha should be positive")
+        
+        if type(self.alpha) not in (int,float):
+            raise ValueError(f"alpha should an int or float, not {type(self.alpha)}")  
 
-        # Cases where discrete model used in continuous function
-        if discrete_case == True:
-            if not isinstance(X, np.ndarray):
-                raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
-        
-            if X.shape[0] == 0:
-                raise ValueError("X is an empty array")
-        
-            if X.shape[1] != 2:
-                raise ValueError(f"Input X should have shape (nb_samples,2), not (nb_samples,{X.shape[1]})") 
-        
-            if self.alpha < 0:
-                raise ValueError(f"alpha should be positive")
-        
-            if type(self.alpha) not in (int,float):
-                raise ValueError(f"alpha should an int or float, not {type(self.alpha)}")
-            
-            # create histogram with the first half of the data
-            Y1 = crosstab(X[:int(len(X)/2),0], X[:int(len(X)/2),1])[1]
-            Y2 = crosstab(X[int(len(X)/2):,0], X[int(len(X)/2):,1])[1]
-            self.probability_matrix = self._compute_matrix(n=X.shape[0],Y1=Y1,Y2=Y2)
-        
-        else:
-            self.probability_matrix = self._compute_matrix()
+        self.probability_matrix = self._compute_matrix(X=X,discrete_case=True)
         
         return self
 
@@ -175,11 +165,11 @@ class Discrete:
 ## Test of class discrete with dataset ##
 
 # Source of HairEyeColor dataset: https://www.kaggle.com/datasets/jasleensondhi/hair-eye-color
-# path_data = r"C:\Users\LaurèneDAVID\Documents\Projects\Dimension_Reduction\HairEyeColor.csv"
-# df = pd.read_csv(path_data)
-# X = df[["Hair","Eye"]].to_numpy()
+path_data = r"C:\Users\LaurèneDAVID\Documents\Projects\Dimension_Reduction\HairEyeColor.csv"
+df = pd.read_csv(path_data)
+X = df[["Hair","Eye"]].to_numpy()
 
-# model = Discrete(alpha=0.01)
-# model.fit(X)
-# print(model.probability_matrix)
+model = Discrete(alpha=0.01)
+model.fit(X)
+print(model.probability_matrix)
 
