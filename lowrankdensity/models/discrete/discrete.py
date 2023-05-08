@@ -32,11 +32,12 @@ class Discrete:
 
 
     def _compute_matrix(self,X=None,n=None,Y1=None,Y2=None,discrete_case=True):
-        
         if discrete_case == True:
             n = X.shape[0]
-            Y1 = crosstab(X[:int(len(X)/2),0], X[:int(len(X)/2),1])[1]
-            Y2 = crosstab(X[int(len(X)/2):,0], X[int(len(X)/2):,1])[1]
+            k, Y1 = crosstab(X[:int(len(X)/2),0], X[:int(len(X)/2),1])
+            _, Y2 = crosstab(X[int(len(X)/2):,0], X[int(len(X)/2):,1])
+            
+            self.keys = k
 
         cstar = self.alpha/10 
         d = np.max(np.shape(Y1))
@@ -44,8 +45,7 @@ class Discrete:
         Y2 = Y2/np.sum(Y2)
 
         if (n <= d * np.log(d)):
-            self.P = (Y1 + Y2) / 2
-            return self.P
+            return (Y1 + Y2) / 2
         
         p, q = np.sum(Y1, axis=1), np.sum(Y1, axis=0)
         res = np.zeros(np.shape(Y1))
@@ -88,8 +88,10 @@ class Discrete:
                                     res[I[i], J[j]] = H[i, j]
         
         res[res<0.] = 0.
+        
         if np.sum(res) == 0:
             return (Y1+Y2)/2
+        
         return res/np.sum(res)
 
 
@@ -101,7 +103,7 @@ class Discrete:
         Parameters:
         ----
 
-        X: nd.array of size (nb_samples,2) 
+        X: nd.array of size (n_samples,2) 
         A numpy array with 2 categorical variables (int, float or str)
 
         
@@ -133,30 +135,38 @@ class Discrete:
 
 
     
-    # def sample(self, n_samples=1):
-    #     """
-    #     Sample discrete data with low_rank probability matrix P
+    def sample(self, n_samples=1):
+        """
+        Sample discrete data with low_rank probability matrix P
 
-    #     Parameters 
-    #     -------   
-    #     n_samples : int, default=1
-    #     Number of samples to draw from distribution 
+        Parameters 
+        -------   
+        n_samples : int, default=1
+        Number of samples to draw from distribution 
 
         
-    #     Returns
-    #     -------
-    #     sample: nd.array of shape (n_samples,)
-    #     Samples drawn from discrete distribution with probability matrix P
+        Returns
+        -------
+        sample: nd.array of shape (n_samples,)
+        Samples drawn from discrete distribution with probability matrix P
         
 
-    #     """
-    #     P = self.probability_matrix
-    #     nrow, ncol = P.shape
+        """
+        # Reshape probability_matrix
+        P = self.probability_matrix
+        nrow, ncol = P.shape
+        p = P.flatten()
         
-    #     p = np.reshape(P,nrow*ncol)
-    #     sample = np.random.choice(len(p), size=n_samples, p=p, replace=replace)
+        # Sample 2D multinomial data with probability matrix
+        samples = np.random.multinomial(n=1, pvals=p, size=n_samples).reshape((n_samples,nrow,ncol))
+        samples = np.argwhere(samples==1)[:,1:]
+
+        # Map values of samples to the labels of original data 
+        dict_d1, dict_d2 = [dict(zip(np.arange(len(k)),k)) for k in self.keys]
+        samples_ = np.array([[dict_d1[i],dict_d2[j]] for i,j in samples])
+
         
-    #     return sample
+        return samples_
 
 
 

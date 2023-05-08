@@ -1,12 +1,12 @@
 """
-Generate sample data with a discrete distribution and continuous distribution
+Generate low rank samples for discrete and continuous distributions
 """
 
 import warnings
 import numpy as np 
 import math 
 import pandas as pd
-from os.path import join
+#from os.path import join
 
 
 
@@ -43,18 +43,16 @@ def generate_lowrank_discrete(n_samples=1000,K=2,d1=50,d2=50):
     if n_samples > 50000:
         warnings.warn("Choosing n_samples > 50000 might slow down data generation.")
 
-    # if generate_lowrank_discrete.__default__ == tuple(locals().values()):
-    #     pass
-
+    # Compute a low rank probability matrix
     u, v = np.random.rand(d1,K), np.random.rand(d2,K)
     res = (1/K)*(u @ v.T)
     P = res/np.sum(res)
-    p = np.reshape(P,d1*d2)
-    
-    samples = np.random.multinomial(n_samples,p,size=2).T 
-    # ?? n != n_samples in np.random.multinomial
 
-    return samples
+    # Reshape matrix and sample multinomial distribution with it
+    p = P.flatten()
+    samples = np.random.multinomial(1,p,size=n_samples).reshape((n_samples,d1,d2))
+    
+    return np.argwhere(samples==1)[:,1:]
 
 
 
@@ -88,7 +86,7 @@ def generate_lowrank_continuous(n_samples=1000,K=2):
     #     return samples
 
     if n_samples > 50000:
-        warnings.warn("Choosing n_samples > 50000 might slow down data generation.")
+        warnings.warn("Choosing n_samples > 50000 might slow down sampling.")
 
     a1, b1 = np.linspace(1,10,K), np.linspace(3,10,K)
     a2, b2 = np.linspace(2,15,K), np.linspace(4,25,K) 
