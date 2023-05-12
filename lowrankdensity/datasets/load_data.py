@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import os
 from os.path import join
-from scipy import sparse
+
 
 
 def load_iris():
@@ -18,6 +18,7 @@ def load_iris():
     path = join("", 'datasets/iris/iris_cat.csv')
     print(path)
     df = pd.read_csv(path)
+    print(df)
     return df
 
 
