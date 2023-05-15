@@ -37,7 +37,7 @@ pip install -i https://test.pypi.org/simple/ Lowrankdensity
 
 
 
-### Example IOKR with Bibtex Data
+### Example 
 
 ```python
 
