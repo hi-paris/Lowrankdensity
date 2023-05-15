@@ -6,11 +6,11 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = []
-test_requirements = [ ]
+test_requirements = []
 
 setup(
     author="Julien Chhor, Olga Klopp, Alexandre Tsybakov",
-    author_email='gaetan.brison@gmail.com',
+    author_email='gaetan.brison@ip-paris.fr',
     python_requires='>=3.8',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
@@ -28,16 +28,16 @@ setup(
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
     ],
-    description="Python Boilerplate contains all the boilerplate you need to create a Python package.",
+    description="Python package for Low rank density estimation.",
     install_requires=["numpy","scipy","sklearn"],
     license="MIT license",
     include_package_data=True,
-    keywords='DensLowRank',
-    name='DensLowRank',
-    packages=find_packages(include=['DensLowRank', 'DensLowRank.*']),
+    keywords='Lowrankdensity',
+    name='Lowrankdensity',
+    packages=find_packages(include=['Lowrankdensity', 'Lowrankdensity.*']),
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/hi-paris/DensLowRank',
+    url='https://github.com/hi-paris/Lowrankdensity',
     version='0.0.1',
     zip_safe=False,
 )
