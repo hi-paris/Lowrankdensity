@@ -10,7 +10,7 @@ test_requirements = []
 
 setup(
     author="Julien Chhor, Olga Klopp, Alexandre Tsybakov",
-    author_email='gaetan.brison@ip-paris.fr',
+    author_email='engineer.hi.paris@gmail.com',
     python_requires='>=3.8',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
