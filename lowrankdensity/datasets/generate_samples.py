@@ -5,12 +5,11 @@ Generate low rank samples for discrete and continuous distributions
 import warnings
 import numpy as np 
 import math 
-import pandas as pd
 #from os.path import join
 
 
 
-def generate_lowrank_discrete(n_samples=1000,K=2,d1=50,d2=50):
+def generate_lowrank_discrete(n_samples=5000,K=2,d1=10,d2=10):
     """
     Generate 2D discrete samples from a low rank probability matrix.
     
@@ -20,16 +19,16 @@ def generate_lowrank_discrete(n_samples=1000,K=2,d1=50,d2=50):
 
     Parameters 
     ----------
-    n_samples : int, default = 1000
+    n_samples : int, default 5000
     Number of discrete 2D samples to generate
 
-    K : int, default = 2
-    Rank of the probability matrix  
+    K : int, default 2
+    Rank of the probability matrix used to generate multinomial samples 
 
-    d1 : int, default = 50
+    d1 : int, default 10
     Number of classes in the first discrete variable
     
-    d2 : int, default = 50
+    d2 : int, default 10
     Number of classes in the second discrete variable 
 
 
@@ -39,9 +38,15 @@ def generate_lowrank_discrete(n_samples=1000,K=2,d1=50,d2=50):
     List of samples
     
     """
+    if (type(d1)!= int) or (type(d2)!= int):
+        raise TypeError("d1 and d2 should only take int values") 
 
-    if n_samples > 50000:
-        warnings.warn("Choosing n_samples > 50000 might slow down data generation.")
+    if ((d1 > 100) or (d1 < 2)) or ((d2 > 100) or (d2 < 2)):
+        raise ValueError("d1 and d2 should be between 2 and 100")
+    
+    if K > n_samples**(1/4):
+        warnings.warn("The low rank estimator won't perform better than a classic histogram estimator for samples generated with a rank K > n_samples**(1/4)") 
+
 
     # Compute a low rank probability matrix
     u, v = np.random.rand(d1,K), np.random.rand(d2,K)
@@ -57,7 +62,7 @@ def generate_lowrank_discrete(n_samples=1000,K=2,d1=50,d2=50):
 
 
 
-def generate_lowrank_continuous(n_samples=1000,K=2):
+def generate_lowrank_continuous(n_samples=5000,K=2):
     """
     Generate 2D low rank continuous samples. 
 
@@ -67,11 +72,11 @@ def generate_lowrank_continuous(n_samples=1000,K=2):
 
     Parameters 
     ----------
-    n_samples : int, default = 1000
+    n_samples : int, default 5000
     Number of samples to generate
 
-    K : int, default = 2
-    Rank of the samples 
+    K : int, default 2 
+    Rank of the distribution used to generate samples 
 
     Return 
     --------
@@ -80,13 +85,8 @@ def generate_lowrank_continuous(n_samples=1000,K=2):
     
     """
 
-    # if generate_lowrank_discrete.__default__ == tuple(locals().values()):
-    #     path = join("",'datasets/samples_continuous.csv')
-    #     samples = pd.read_csv(path).to_numpy()
-    #     return samples
-
-    if n_samples > 50000:
-        warnings.warn("Choosing n_samples > 50000 might slow down sampling.")
+    if K > n_samples**(1/4):
+        warnings.warn("The low rank estimator won't perform better than a classic histogram estimator for samples generated with a rank K > n_samples**(1/4)") 
 
     a1, b1 = np.linspace(1,10,K), np.linspace(3,10,K)
     a2, b2 = np.linspace(2,15,K), np.linspace(4,25,K) 
@@ -94,9 +94,9 @@ def generate_lowrank_continuous(n_samples=1000,K=2):
     f = np.array([np.random.beta(a=a,b=b,size=n_samples) for a,b in zip(a1,b1)]).T
     g = np.array([np.random.beta(a=a,b=b,size=n_samples) for a,b in zip(a2,b2)]).T
     
-    u = np.random.randint(low=0,high=K-1,size=n_samples)
+    u = np.random.randint(low=0,high=K,size=n_samples)
     samples = np.array([[f[i,j],g[i,j]] for i,j in enumerate(u)])
         
     return samples
-    
+
 

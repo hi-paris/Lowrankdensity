@@ -4,10 +4,10 @@ Low-rank probability matrix estimator for discrete distributions
 Author : Laurène David
 """
 
+import os
 import numpy as np
-import pandas as pd
+import warnings
 from scipy.stats.contingency import crosstab
-
 
 
 class Discrete:
@@ -15,7 +15,7 @@ class Discrete:
     
     Parameters 
     ----------
-    alpha : float, default 0.1
+    alpha : float, default 1
     Level of precision of matrix estimation
 
     
@@ -26,23 +26,46 @@ class Discrete:
 
     """
 
-    def __init__(self,alpha=0.1):
+    def __init__(self,alpha=1):
         self.alpha = alpha 
         self.probability_matrix = None
 
 
-    def _compute_matrix(self,X=None,n=None,Y1=None,Y2=None,discrete_case=True):
-        if discrete_case == True:
-            n = X.shape[0]
-            k, Y1 = crosstab(X[:int(len(X)/2),0], X[:int(len(X)/2),1])
-            _, Y2 = crosstab(X[int(len(X)/2):,0], X[int(len(X)/2):,1])
-            
-            self.keys = k
+    def _compute_histograms(self,X):
+        # Create 2 matrices of same shape for final histograms
+        d1max, d2max = np.unique(X[:,0]), np.unique(X[:,1])
+        l1max, l2max = len(d1max), len(d2max)
+        Y1max, Y2max = np.zeros((l1max,l2max),dtype=int), np.zeros((l1max,l2max),dtype=int)
+        dictYmax= {k:dict(zip(d,np.arange(0,l))) for k,d,l in zip(["d1","d2"],[d1max,d2max],[l1max,l2max])}
 
-        cstar = self.alpha/10 
-        d = np.max(np.shape(Y1))
-        Y1 = Y1/np.sum(Y1)
+        # Create 2 histograms by splitting data in half
+        c1, Y1 = crosstab(X[:int(len(X)/2),0], X[:int(len(X)/2),1])
+        c2, Y2 = crosstab(X[int(len(X)/2):,0], X[int(len(X)/2):,1])
+        dictY1 = {k:dict(zip(c1[i],np.arange(0,len(c1[i])))) for k,i in zip(["d1","d2"],range(2))}
+        dictY2 = {k:dict(zip(c2[i],np.arange(0,len(c2[i])))) for k,i in zip(["d1","d2"],range(2))}   
+        
+        # Fill 2 matrices Y1max, Y2max based on Y1, Y2
+        index1 = np.array(np.meshgrid(c1[0],c1[1])).T.reshape(-1,2) 
+        index2 = np.array(np.meshgrid(c2[0],c2[1])).T.reshape(-1,2)
+
+        for (i1,j1), (i2,j2) in zip(index1,index2):
+            Y1max[dictYmax["d1"][i1],dictYmax["d2"][j1]] = Y1[dictY1["d1"][i1],dictY1["d2"][j1]]
+            Y2max[dictYmax["d1"][i2],dictYmax["d2"][j2]] = Y2[dictY2["d1"][i2],dictY2["d2"][j2]]
+        
+        # Return the padded histograms Y1max and Y2max 
+        self.keys = tuple([d1max,d2max])
+        return Y1max, Y2max
+
+
+    def _compute_matrix(self,X=None,n=None,Y1=None,Y2=None,discrete=True):
+        # Compute histograms in the discrete case 
+        if discrete == True:
+            n = X.shape[0]
+            Y1, Y2 = self._compute_histograms(X)
+            
+        Y1 = Y1/np.sum(Y1) 
         Y2 = Y2/np.sum(Y2)
+        d = np.max(np.shape(Y1))
 
         if (n <= d * np.log(d)):
             return (Y1 + Y2) / 2
@@ -66,24 +89,25 @@ class Discrete:
                     
                     if len(J) > 0 :
                         M = np.zeros((len(I), len(J)))
-                        row_indices = np.zeros(Y2.shape[0], dtype=bool)
-                        row_indices[I] = True
-                        col_indices = np.zeros(Y2.shape[1], dtype=bool)
-                        col_indices[J] = True
-                        M = Y2[row_indices, :][:, col_indices]
+                        row_id = np.zeros(Y2.shape[0], dtype=bool)
+                        row_id[I] = True
+                        col_id = np.zeros(Y2.shape[1], dtype=bool)
+                        col_id[J] = True
+                        
+                        M = Y2[row_id, :][:, col_id]
 
                         if (np.sum(M) < 2 * self.alpha * np.log(d) / (n * np.log(2))):
-                            for i in range(len(I)):  # +1
+                            for i in range(len(I)):  
                                 for j in range(len(J)):
                                     res[I[i], J[j]] = Y2[I[i], J[j]]
 
                         else:
-                            tau = np.log(d) * np.sqrt(cstar * 2**(1 - min(t, u)) / n)
+                            tau = np.log(d) * np.sqrt(0.1 * 2**(1 - min(t, u)) / n)
                             U, s, Vh = np.linalg.svd(M)
                             l = len(s[s >= tau])
                             H = np.dot(U[:, :l] * s[:l], Vh[:l, :])
                     
-                            for i in range(len(I)):  # +2
+                            for i in range(len(I)):  
                                 for j in range(len(J)):
                                     res[I[i], J[j]] = H[i, j]
         
@@ -94,10 +118,9 @@ class Discrete:
         
         return res/np.sum(res)
 
-
     
     def fit(self,X):
-        '''
+        """
         Fit categorical dataset to discrete probability matrix estimator
 
         Parameters:
@@ -112,7 +135,7 @@ class Discrete:
         self : object
         Returns the instance itself.
 
-        '''
+        """
 
         if not isinstance(X, np.ndarray):
             raise TypeError(f"Input X should be a nd.array, not a {type(X)}")
@@ -129,12 +152,10 @@ class Discrete:
         if type(self.alpha) not in (int,float):
             raise ValueError(f"alpha should an int or float, not {type(self.alpha)}")  
 
-        self.probability_matrix = self._compute_matrix(X=X,discrete_case=True)
-        
-        return self
+        self.probability_matrix = self._compute_matrix(X)
+        return None
 
 
-    
     def sample(self, n_samples=1):
         """
         Sample discrete data with low_rank probability matrix P
@@ -149,15 +170,15 @@ class Discrete:
         -------
         sample: nd.array of shape (n_samples,)
         Samples drawn from discrete distribution with probability matrix P
-        
 
         """
+
         # Reshape probability_matrix
         P = self.probability_matrix
-        nrow, ncol = P.shape
         p = P.flatten()
         
         # Sample 2D multinomial data with probability matrix
+        nrow, ncol = P.shape
         samples = np.random.multinomial(n=1, pvals=p, size=n_samples).reshape((n_samples,nrow,ncol))
         samples = np.argwhere(samples==1)[:,1:]
 
@@ -165,21 +186,6 @@ class Discrete:
         dict_d1, dict_d2 = [dict(zip(np.arange(len(k)),k)) for k in self.keys]
         samples_ = np.array([[dict_d1[i],dict_d2[j]] for i,j in samples])
 
-        
         return samples_
 
-
-
-
-
-## Test of class discrete with dataset ##
-
-# # Source of HairEyeColor dataset: https://www.kaggle.com/datasets/jasleensondhi/hair-eye-color
-# path_data = r"C:\Users\LaurèneDAVID\Documents\Projects\Dimension_Reduction\HairEyeColor.csv"
-# df = pd.read_csv(path_data)
-# X = df[["Hair","Eye"]].to_numpy()
-
-# model = Discrete(alpha=0.01)
-# model.fit(X)
-# print(model.probability_matrix)
 

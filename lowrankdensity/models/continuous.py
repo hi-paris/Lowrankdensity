@@ -1,18 +1,12 @@
 """
-Low-rank probability density function estimator for continuous distributions
+Low-rank probability density model for continuous distributions
 
-Author : Laurène David 
 """
 
 import numpy as np
 import math
-#import DensLowRank.model.discrete *
 from scipy.stats import beta, randint 
-# import sys
-# sys.path.append('C:\\Users\\LaurèneDAVID\\Documents\\Projects\\Dimension_Reduction\\DensLowRank_repo\\DensLowRank\\model\\discrete')
-from discrete import Discrete
-
-
+from lowrankdensity.models.discrete import Discrete
 
 
 class Continuous(Discrete):
@@ -20,21 +14,19 @@ class Continuous(Discrete):
     
     Parameters 
     ----------
-    alpha : float, default=0.1
+    alpha : float, default = 1
     Level of precision of density estimation
 
-    
     Attributes :
     ---------
-    density_function : python function 
-    A density function for bivariate distributions 
-    with inputs x,y each a 1d array
+    density_function : function object 
+    A density function for bivariate distributions with inputs x,y each a 1d array
 
     """
 
     L = 1
     
-    def __init__(self,alpha=0.1):
+    def __init__(self,alpha=1):
         self.alpha = alpha 
         self.density_function = None
 
@@ -89,8 +81,7 @@ class Continuous(Discrete):
         
         if type(self.alpha) not in (int,float):
             raise TypeError(f"alpha should be a float, not {type(self.alpha)}")
-        
-
+    
         n = X.shape[0]
         L = self.L
         r1, R1 = np.min(X[:int(n/2),0]), np.max(X[:int(n/2),0])
@@ -122,7 +113,7 @@ class Continuous(Discrete):
             N1[int((x1 - r1)/h1),int((y1 - r2)/h2)] = N1[int((x1 - r1)/h1),int((y1 - r2)/h2)] + 1
             N2[int((x2 - r1)/h1),int((y2 - r2)/h2)] = N2[int((x2 - r1)/h1),int((y2 - r2)/h2)] + 1
 
-        P = super()._compute_matrix(n=int(n/2), Y1=N1, Y2=N2, discrete_case=False)        
+        P = super()._compute_matrix(n=int(n/2), Y1=N1, Y2=N2, discrete=False)        
         m1 = math.floor((R1-r1)*n**(1/3)*L**(1/2)) 
         m2 = math.floor((R2-r2)*n**(1/3)*L**(1/2))
 
@@ -134,9 +125,8 @@ class Continuous(Discrete):
                 return (1/(h1*h2))*(2/n)*(N1[x1,y1] + N2[x1,y1])
      
         self.density_function = f
-        return self
+        return None
         
-
 
     def pdf(self,x,y):
         """
@@ -145,12 +135,9 @@ class Continuous(Discrete):
         Parameters 
         ---------
         x : nd.array 
-        1D array 
-
-        y : nd.array 
-        1D array
-
+        2D array 
         
+
         Return 
         ---------
         mat : nd.array of shape (len(x),len(y))
@@ -158,59 +145,20 @@ class Continuous(Discrete):
 
         """
         if not isinstance(x,np.ndarray):
-            raise TypeError(f"x should be a nd.array, not a {type(X)}")
+            raise TypeError(f"x should be a nd.array, not a {type(x)}")
         
         if not isinstance(y,np.ndarray):
-            raise TypeError(f"y should be a nd.array, not a {type(X)}")
-        
+            raise TypeError(f"y should be a nd.array, not a {type(y)}")
 
         funs = self.density_function
-        mat = np.zeros((len(x),len(y)))
-        
-        for i in range(len(x)):
-            for j in range(len(y)):
-                mat[i,j] = funs(x[i],y[j])
-        
-        return mat
+
+        return  np.array([[funs(i,j) for j in y] for i in x])
     
 
+    # def sample(self,):
+    #     N, M = 10, 10
+    #     A = np.arange(N)
+    #     B = np.arange(M)
+    
 
-
-### Test Continuous model with continuous test data #####
-
-# np.random.seed(1)
-
-# # Sample data
-# n_samples = 20000
-# K = 8
-
-# a1 = np.linspace(1,2,K)
-# a2 = np.linspace(1.5,2,K) 
-# b1 = np.linspace(1,1.5,K) 
-# b2 = np.linspace(1,2,K) 
-
-# f = [beta(a=a1[j],b=b1[j]) for j in range(K)]
-# g = [beta(a=a2[j],b=b2[j]) for j in range(K)]
-
-# def sample_data(n,K):
-#     mat = np.zeros((n,2))
-#     for i in range(n):
-#         j = randint(low=0,high=K-1).rvs()
-#         X = f[j].rvs()
-#         Y = g[j].rvs()
-#         mat[i,:] = np.array([X,Y])
-#     return mat
-
-# samples = sample_data(n=n_samples,K=K)
-
-
-# # Use Continuous class
-# model = Continuous(alpha=0.1)
-# model.fit(X=samples)
-
-# x = np.linspace(0,1)
-# y = np.linspace(0,1)
-# density_funs = model.pdf(x,y) 
-
-# print(density_funs)
 
