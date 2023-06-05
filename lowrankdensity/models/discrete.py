@@ -1,12 +1,10 @@
 """
 Low-rank probability matrix estimator for discrete distributions
 
-Author : Laurène David
+Authors : Laurène DAVID and Shreshtha SHAURYA
 """
 
-import os
 import numpy as np
-import warnings
 from scipy.stats.contingency import crosstab
 
 
@@ -18,11 +16,30 @@ class Discrete:
     alpha : float, default 1
     Level of precision of matrix estimation
 
-    
+
     Attributes
     ----------
     probability_matrix : np.ndarray of shape (d1,d2) with d1 : nbr of attributes of X1, d2 : nbr of attributes of X2
     Estimated probability matrix of the joint distribution of the data X=(X1,X2)
+
+    
+    Example
+    ----------
+    >>> from lowrankdensity.datasets import generate_lowrank_discrete
+    >>> from lowrankdensity.models import Discrete
+
+    # Generate low rank discrete samples
+    >>> X = generate_lowrank_discrete()
+    
+    # Fit samples to the low rank Discrete model
+    >>> model = Discrete(alpha=0.1)
+    >>> model.fit(X)
+
+    # Get the estimated probability matrix P
+    >>> model.probability_matrix
+
+    # Generate new samples
+    >>> new_samples = model.sample(n_samples=1000)
 
     """
 
@@ -156,9 +173,10 @@ class Discrete:
         return None
 
 
-    def sample(self, n_samples=1):
+    def sample(self, n_samples=1000):
         """
-        Sample discrete data with low_rank probability matrix P
+        Sample discrete data from a multinomial distribution with low_rank probability matrix P
+        
 
         Parameters 
         -------   

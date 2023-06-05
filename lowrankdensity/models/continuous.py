@@ -1,12 +1,13 @@
 """
 Low-rank probability density model for continuous distributions
 
+Author : Laurène DAVID
 """
 
 import numpy as np
+import warnings
 import math
-from scipy.stats import beta, randint 
-from lowrankdensity.models.discrete import Discrete
+from lowrankdensity.models import Discrete
 
 
 class Continuous(Discrete):
@@ -15,12 +16,37 @@ class Continuous(Discrete):
     Parameters 
     ----------
     alpha : float, default = 1
-    Level of precision of density estimation
+    Level of precision of the density estimation
 
+    
     Attributes :
     ---------
     density_function : function object 
     A density function for bivariate distributions with inputs x,y each a 1d array
+
+    
+    Example :
+    ----------
+    >>> import numpy as np
+    >>> from lowrankdensity.datasets import generate_lowrank_continuous
+    >>> from lowrankdensity.models import Continuous
+
+    # Generate low rank continuous samples
+    >>> X = generate_lowrank_continuous()
+    
+    # Fit samples to the low rank Discrete model
+    >>> model = Continuous(alpha=0.1)
+    >>> model.fit(X)
+
+    # Get the estimated probability density function f
+    >>> lowrank_estimator = model.density_function
+
+    # Compute the probability density function on two arrays x,y 
+    >>> x,y = np.linspace(0,1,100), np.linspace(0,1,100)
+    >>> lowrank_matrix = model.pdf(x,y)
+
+    # Generate new samples
+    >>> new_samples = model.sample(n_samples=1000)
 
     """
 
@@ -46,7 +72,6 @@ class Continuous(Discrete):
                 N = np.zeros((len(E)+1,))
                 for i in range(int(n/2)+1,n):
                     N[int((Z[i] - r)/h)] += 1
-            
                 return (1/h)*N[int((x-r)/h)]
 
             return f
@@ -113,7 +138,11 @@ class Continuous(Discrete):
             N1[int((x1 - r1)/h1),int((y1 - r2)/h2)] = N1[int((x1 - r1)/h1),int((y1 - r2)/h2)] + 1
             N2[int((x2 - r1)/h1),int((y2 - r2)/h2)] = N2[int((x2 - r1)/h1),int((y2 - r2)/h2)] + 1
 
-        P = super()._compute_matrix(n=int(n/2), Y1=N1, Y2=N2, discrete=False)        
+        P = super()._compute_matrix(n=int(n/2), Y1=N1, Y2=N2, discrete=False)
+
+        grid_dict = {"r1":r1, "r2":r2, "R1":R1, "R2":R2, "h1":h1, "h2":h2, "E1":E1, "E2":E2}
+        self.grid_params = grid_dict
+
         m1 = math.floor((R1-r1)*n**(1/3)*L**(1/2)) 
         m2 = math.floor((R2-r2)*n**(1/3)*L**(1/2))
 
@@ -130,12 +159,15 @@ class Continuous(Discrete):
 
     def pdf(self,x,y):
         """
-        Compute the estimated low-rank probability density function 
+        Compute a matrix with the low-rank probability density function values
 
         Parameters 
         ---------
-        x : nd.array 
-        2D array 
+        x : 1D nd.array 
+        The first dimension x to compute the density estimator f(x,y)
+
+        y : 1D nd.array
+        The second dimension x to compute the density estimator f(x,y) 
         
 
         Return 
@@ -144,21 +176,71 @@ class Continuous(Discrete):
         Matrix with computed density function values for inputs x and y
 
         """
-        if not isinstance(x,np.ndarray):
-            raise TypeError(f"x should be a nd.array, not a {type(x)}")
+        if (not isinstance(x,np.ndarray)) or (not isinstance(y,np.ndarray)):
+            raise TypeError("x and y should be a numpy arrays")
         
-        if not isinstance(y,np.ndarray):
-            raise TypeError(f"y should be a nd.array, not a {type(y)}")
+        if (x.ndim > 1) or (y.ndim > 1):
+            raise ValueError("x and y should be 1D arrays")
+        
+        if (np.all((x <= 1) & (x >= 0)) == False) or (np.all((y <= 1) & (y >= 0)) == False):
+            warnings.warn("The low rank continuous estimator is sued for original densities with support on [0,1]x[0,1]")
 
-        funs = self.density_function
-
-        return  np.array([[funs(i,j) for j in y] for i in x])
+        lowrank_estimator = self.density_function
+        return  np.array([[lowrank_estimator(i,j) for j in y] for i in x])
     
 
-    # def sample(self,):
-    #     N, M = 10, 10
-    #     A = np.arange(N)
-    #     B = np.arange(M)
+    def sample(self,n_samples=1000):
+        """
+        Sample continuous data with the low rank density function estimator
+        
+
+        Parameters 
+        -------   
+        n_samples : int, default=1
+        Number of samples to draw from distribution 
+
+        
+        Returns
+        -------
+        sample: nd.array of shape (n_samples,)
+        Samples drawn from discrete distribution with probability matrix P
+
+        """
+        r1, r2, R1, R2, h1, h2, E1, E2 = self.grid_params.values()
+        f = self.density_function
+
+        # 1. Define P
+        range_a1, range_a2 = r1 + E1[:len(E1)-1]*h1, r1 + E1[1:]*h1
+        range_b1, range_b2 = r2 + E2[:len(E2)-1]*h2, r2 + E2[1:]*h2
+        P2 = np.array([[(a2 - a1)*(b2 - b1)*f(a1,b1) for a1,a2 in zip(range_a1,range_a2)] for b1,b2 in zip(range_b1,range_b2)])
+        P2 = P2/np.sum(P2)
+
+        # 2. Sample Z with a multinomial distribution with P
+        p = P2.flatten()
+        nrow2, ncol2 = P2.shape
+        Z = np.random.multinomial(n=1, pvals=p, size=n_samples).reshape((n_samples,nrow2,ncol2))
+        Z = np.argwhere(Z==1)[:,1:]
+
+        # 3. Use Z to sample continuous data with uniform distribution
+        Z1, Z2 = Z[:,0], Z[:,1]
+        rangeZ_a1, rangeZ_a2 = r1 + Z1*h1, r1 + (Z1+1)*h1
+        rangeZ_b1, rangeZ_b2 = r2 + Z2*h2, r2 + (Z2+1)*h2
+        X = np.array([np.random.uniform(low=[a1,b1],high=[a2,b2],size=2).T for a1,a2,b1,b2 in zip(rangeZ_a1,rangeZ_a2,rangeZ_b1,rangeZ_b2)])
+        
+        return X
+    
+
+    
+
+
+
+
+                
+
+
+
+
+        
     
 
 
