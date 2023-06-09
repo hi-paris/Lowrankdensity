@@ -1,1 +1,1 @@
-from lowrankdensity.datasets.load_data import *
+from lowrankdensity.datasets import *
