@@ -1,1 +1,1 @@
-from lowrankdensity.datasets import *
+from lowrankdensity.datasets._generate_samples import *

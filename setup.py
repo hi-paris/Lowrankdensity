@@ -9,7 +9,7 @@ requirements = []
 test_requirements = []
 
 setup(
-    author="Julien Chhor, Olga Klopp, Alexandre Tsybakov",
+    author="Julien Chhor, Olga Klopp, Alexandre Tsybakov supported by Laurène David, Shreshtha Shaurya and Gaëtan Brison Hi! PARIS Engineering Team",
     author_email='engineer.hi.paris@gmail.com',
     python_requires='>=3.8',
     classifiers=[
@@ -29,7 +29,7 @@ setup(
         'Programming Language :: Python :: 3.10',
     ],
     description="Python package for Low rank density estimation.",
-    install_requires=["numpy","scipy","sklearn"],
+    install_requires=["numpy","scipy","scikit-learn","matplotlib","seaborn","pandas","plotly"],
     license="MIT license",
     include_package_data=True,
     keywords='Lowrankdensity',
