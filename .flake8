@@ -1,0 +1,13 @@
+[flake8]
+# ignore = E225,E302,E41,E231,W293,E303,E265,E262,E261,W291,E251
+max-line-length = 1600
+max-complexity = 10
+
+# E225: whitespace around arithmetic operator
+# E302: expected two blank lines, found 0
+# E231: missing whitespace around : ;
+# W293: Blank line contains whitespace
+# E303: too many blank lines
+# E265: Block comment should start with '# '
+# W291: Trailing whitespace
+# E251: Unexpected spaces around keyword / parameter equals

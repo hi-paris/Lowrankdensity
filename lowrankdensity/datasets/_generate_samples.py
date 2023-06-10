@@ -56,7 +56,7 @@ def generate_lowrank_discrete(n_samples=5000,K=2,d1=10,d2=10):
     # Compute a low rank probability matrix
     u, v = np.random.rand(d1,K), np.random.rand(d2,K)
     res = (1/K)*(u @ v.T)
-    P = res/np.sum(res)
+    P = res/np.sum(res) 
 
     # Reshape matrix and sample multinomial distribution with it
     p = P.flatten()
