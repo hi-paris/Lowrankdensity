@@ -38,6 +38,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/hi-paris/Lowrankdensity',
-    version='0.0.1',
+    version='0.0.3',
     zip_safe=False,
 )

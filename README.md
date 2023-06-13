@@ -1,4 +1,4 @@
-# DensLowRank
+# LowRankDensity
 In the present paper we incorporate rank constraint into density estimation problem. In the
 discrete case, we assume that the density can be represented as a low-rank matrix. In the continuous case, we assume that the density is bi-variate and Lipschitz-continuous over a compact
 rectangular support. Additionally, we assume that it can be decomposed as a sum of separable
