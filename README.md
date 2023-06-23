@@ -1,3 +1,6 @@
+![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)
+![Python 3.8](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10-blue)
+
 # LowRankDensity
 In the present paper we incorporate rank constraint into density estimation problem. In the
 discrete case, we assume that the density can be represented as a low-rank matrix. In the continuous case, we assume that the density is bi-variate and Lipschitz-continuous over a compact
