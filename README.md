@@ -27,25 +27,51 @@ The library has been tested on Linux, MacOSX and Windows. It requires a C++ comp
 - Pandas (>=1.2)
 - Numpy (>=1.16)
 - Scipy (>=1.0)
-- Scikit-learn (>=1.0) 
+- Scikit-learn (>=1.0)
 
-#### Pip installation
+### Example (1/2) Discrete Case
 
+####  01 - Download Library ⚙️
 
 You can install the toolbox through PyPI with:
 
 ```console
-pip install -i https://test.pypi.org/simple/ Lowrankdensity
+pip install -i https://test.pypi.org/simple/ Lowrankdensity==0.0.5 --quiet
 ```
 
 
+#### 02 - Import Library 📦
+```python
+import lowrankdensity
+```
 
-### Example 
+#### 03 - Load example dataset 💽
+```python
+from lowrankdensity.datasets._generate_samples import generate_lowrank_discrete
+X = generate_lowrank_discrete(n_samples=5000,K=2,d1=10,d2=10)
+```
 
 ```python
+from lowrankdensity.models.discrete import *
+# Fit samples to the low rank Discrete model
+model = Discrete(alpha=0.1)
+model.fit(X)
 
+# Get the estimated probability matrix P
+model.probability_matrix
+
+# Generate new samples
+new_samples = model.sample(n_samples=1000)
+```
+
+```python
+from lowrankdensity.viz._2Dhistogram import *
+plot_2d_histogram(new_samples,text_auto=True)
 
 ```
+![metrics](images/discrete1.jpg)
+
+#### Congrats you made it 🎉
 
 
 ## Contributions and code of conduct
