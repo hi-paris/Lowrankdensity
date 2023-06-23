@@ -51,6 +51,7 @@ from lowrankdensity.datasets._generate_samples import generate_lowrank_discrete
 X = generate_lowrank_discrete(n_samples=5000,K=2,d1=10,d2=10)
 ```
 
+#### 04 - the Model ⚙️
 ```python
 from lowrankdensity.models.discrete import *
 # Fit samples to the low rank Discrete model
@@ -64,6 +65,7 @@ model.probability_matrix
 new_samples = model.sample(n_samples=1000)
 ```
 
+#### 05 - Visualization 📊
 ```python
 from lowrankdensity.viz._2Dhistogram import *
 plot_2d_histogram(new_samples,text_auto=True)
