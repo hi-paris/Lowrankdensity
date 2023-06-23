@@ -71,7 +71,7 @@ from lowrankdensity.viz._2Dhistogram import *
 plot_2d_histogram(new_samples,text_auto=True)
 
 ```
-![metrics](images/discrete1.jpg)
+![discrete](images/density.jpg)
 
 #### Congrats you made it 🎉
 
@@ -92,8 +92,4 @@ You can also post bug reports and feature requests in Github issues. Make sure t
 
 ## References
 
-[1] 
 
-[2] 
-
-[3] 
