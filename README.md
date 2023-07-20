@@ -29,14 +29,19 @@ The library has been tested on Linux, MacOSX and Windows. It requires a C++ comp
 - Scipy (>=1.0)
 - Scikit-learn (>=1.0)
 
-### Example (1/2) Discrete Case
+### 00 Colab Examples:
+* Example on simulated data 🎯
+[![Open In Colab](https://colab.research.google.com/drive/1C-ZsH9nNNNpgGPJ2bZDIWU9YeJcOG_B2?usp=sharing)
+
+
+###  Discrete Case
 
 ####  01 - Download Library ⚙️
 
 You can install the toolbox through PyPI with:
 
 ```console
-pip install -i https://test.pypi.org/simple/ Lowrankdensity==0.0.5 --quiet
+pip install Lowrankdensity
 ```
 
 
