@@ -31,7 +31,7 @@ The library has been tested on Linux, MacOSX and Windows. It requires a C++ comp
 
 ### 00 Colab Examples:
 * Example on simulated data 🎯
-[![Open In Colab]([https://colab.research.google.com/drive/1C-ZsH9nNNNpgGPJ2bZDIWU9YeJcOG_B2?usp=sharing](https://colab.research.google.com/drive/1C-ZsH9nNNNpgGPJ2bZDIWU9YeJcOG_B2?usp=sharing#scrollTo=XKy8R3Whvmxb)
+[![Open In Colab](https://colab.research.google.com/drive/1C-ZsH9nNNNpgGPJ2bZDIWU9YeJcOG_B2?usp=sharing)](https://colab.research.google.com/drive/1C-ZsH9nNNNpgGPJ2bZDIWU9YeJcOG_B2?usp=sharing#scrollTo=XKy8R3Whvmxb)
 
 
 ###  Discrete Case
