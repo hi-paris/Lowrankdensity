@@ -20,9 +20,11 @@ The Lowrankdensity package contains three modules:
 - `lowrankdensity.models`: Estimate probability densities for discrete and continuous distributions and resample from the estimated distributions
 - `lowrankdensity.viz`: Plot the estimated bivariate distributions 
 
-### 00 - Colab Examples:
-* Example on simulated data 🎯
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1VdP1RUUqtP-2HDqNY0d0W5_dHb_PlSQM?usp=sharing)
+
+
+
+
+
 
 ## Installation
 
@@ -46,7 +48,7 @@ pip install Lowrankdensity
 import lowrankdensity
 ```
 
-<br>
+You can find here a google colab on how to use the package [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1VdP1RUUqtP-2HDqNY0d0W5_dHb_PlSQM?usp=sharing)
 
 ## Documentation
 
@@ -64,10 +66,8 @@ The `generate_lowrank_discrete(n_samples,K,d1,d2)` function samples bivariate da
 from lowrankdensity.datasets._generate_samples import generate_lowrank_discrete
 
 X1 = generate_lowrank_discrete(n_samples=5000,K=2,d1=10,d2=10)
-
 ```
 
-<br>
 
 #### 01.2 - Low rank probability matrix estimator
 
@@ -90,7 +90,6 @@ model.probability_matrix
 new_samples1 = model.sample(n_samples=1000)
 ```
 
-<br>
 
 #### 01.3 - Plot bivariate discrete samples (with plotly)
 The `viz` module contains two functions to visualize the distribution of newly sampled data from the discrete low rank estimator: `plot_2d_histogram()` to plot a two-dimensional histogram and `plot_2d_contour_histogram()` to plot a two-dimensional contour histogram.
@@ -106,8 +105,6 @@ plot_2d_histogram(new_samples1, text_auto=True)
 ![metrics](images/density.jpg)
 
 <br>
-<br>
-
 
 
 ### **02 - Continuous case**
@@ -123,7 +120,6 @@ from lowrankdensity.datasets._generate_samples import generate_lowrank_continuou
 X2 = generate_lowrank_continuous(n_samples=5000,K=2)
 ```
 
-<br> 
 
 #### 02.2 - Low rank density function estimator
 
@@ -153,7 +149,6 @@ pdf_lowrank = model.pdf(x,y)
 new_samples2 = model.sample(n_samples=1000)
 ```
 
-<br>
 
 #### 02.3 - Plot bivariate continuous samples (with plotly)
 
@@ -185,6 +180,8 @@ plot_multiple_3d_densities(continuous_model=model, # fitted low rank Continuous 
 ```
 
 ![metrics](images/3D_multiple_densities.png)
+
+
 
 
 ## Acknowledgements
